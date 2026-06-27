@@ -4,6 +4,10 @@
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge)
 ![Ollama](https://img.shields.io/badge/Powered_by-Ollama-white?style=for-the-badge)
 
+<br>
+<img src="assets/screenshot.png" alt="SoterIA Dashboard Mockup" width="100%">
+<br>
+
 SoterIA is an elite, autonomous Security Operations Center (SOC) platform designed for fully air-gapped environments. It utilizes a multi-agent LLM swarm to continuously ingest, triage, and score security events in real time. 
 
 Featuring an advanced **Threat Tribunal** and an integrated **CISO Copilot**, SoterIA allows you to query your live database with natural language to investigate active threats, lateral movement, and critical infrastructure attacks.
