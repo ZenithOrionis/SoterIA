@@ -5,7 +5,20 @@
 ![Ollama](https://img.shields.io/badge/Powered_by-Ollama-white?style=for-the-badge)
 
 <br>
-<img src="assets/screenshot.png" alt="SoterIA Dashboard Mockup" width="100%">
+
+<div align="center">
+  <img src="assets/dashboard_live.png" alt="SoterIA Live Arena Dashboard" width="100%">
+  <p><em><b>Live Arena:</b> Real-time threat telemetry, global attack origin mapping, and Copilot AI sidebar.</em></p>
+  <br>
+
+  <img src="assets/dashboard_microscope.png" alt="Swarm Microscope and Lateral Movement Graph" width="100%">
+  <p><em><b>Swarm Microscope:</b> Attack topology mapping of lateral movement with consensus-based AI agent scoring.</em></p>
+  <br>
+
+  <img src="assets/dashboard_historical.png" alt="Historical Analytics Dashboard" width="100%">
+  <p><em><b>Historical Analytics:</b> Dynamic timeline buckets plotting autonomous threat triage and critical incident distribution over time.</em></p>
+</div>
+
 <br>
 
 SoterIA is an elite, autonomous Security Operations Center (SOC) platform designed for fully air-gapped environments. It utilizes a multi-agent LLM swarm to continuously ingest, triage, and score security events in real time. 
