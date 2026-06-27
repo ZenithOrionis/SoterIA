@@ -1,0 +1,4 @@
+- Law 1: Strict stack separation. Backend is Python (FastAPI). Frontend is Streamlit. Database is SQLite.
+- Law 2: Universal LLM Abstraction. No file is allowed to import `google.generativeai`, `openai`, or `ollama`. All LLM calls MUST go through `src/services/llm_gateway.py` utilizing the `litellm` package.
+- Law 3: Zero-Hallucination Consensus. AI agents extract threat indicators only. The final threat score MUST be computed by deterministic Python math.
+- Law 4: All agent outputs must be strictly enforced via Pydantic v2 schemas.

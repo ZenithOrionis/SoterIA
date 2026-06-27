@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+streamlit
+litellm
+pydantic
+pydantic-settings
+python-dotenv
+plotly
+streamlit-agraph
