@@ -16,6 +16,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 from src.config.settings import get_settings
 from src.db.database import DB_PATH
+from src.db.neo4j_client import neo4j_client
 from src.services.copilot import answer_ciso_question
 from src.services.geo_resolver import ip_to_geo
 from src.services.report_gen import generate_incident_report
@@ -41,33 +42,33 @@ st.markdown(
     /* ── Core background ── */
     .stApp,
     [data-testid="stAppViewContainer"],
-    [data-testid="stMain"] { background-color: #070b11; }
+    [data-testid="stMain"] { background-color: #0a0a0a; }
 
     /* ── Hide Streamlit chrome ── */
     #MainMenu, footer, header { visibility: hidden; }
 
     /* ── Tabs ── */
     [data-testid="stTabs"] button {
-        font-family: 'JetBrains Mono', monospace !important;
+        font-family: 'Inter', monospace !important;
         font-size: 0.75rem !important;
         letter-spacing: 0.12em !important;
         text-transform: uppercase !important;
-        color: #4a5568 !important;
+        color: #404040 !important;
         border-bottom: 2px solid transparent !important;
         padding: 0.6rem 1.4rem !important;
         transition: all 0.2s !important;
     }
     [data-testid="stTabs"] button[aria-selected="true"] {
-        color: #00ff88 !important;
-        border-bottom: 2px solid #00ff88 !important;
+        color: #e5e5e5 !important;
+        border-bottom: 2px solid #3b82f6 !important;
         background: transparent !important;
     }
-    [data-testid="stTabs"] button:hover { color: #c9d1d9 !important; }
+    [data-testid="stTabs"] button:hover { color: #e5e5e5 !important; }
     [data-testid="stTabsContent"] { padding-top: 1.2rem; }
 
     /* ── Metric cards — glassmorphism ── */
     [data-testid="metric-container"] {
-        background: rgba(255,255,255,0.03);
+        background: rgba(255,255,255,0.05);
         border: 1px solid rgba(255,255,255,0.07);
         position: relative;
         overflow: hidden;
@@ -81,9 +82,7 @@ st.markdown(
         padding: 20px 24px !important;
         backdrop-filter: blur(14px) saturate(160%) !important;
         -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
-        box-shadow:
-            0 4px 24px rgba(0,0,0,0.35),
-            inset 0 1px 0 rgba(255,255,255,0.07) !important;
+        
         transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease !important;
     }
     /* Shimmer sweep on hover */
@@ -104,24 +103,21 @@ st.markdown(
     [data-testid="metric-container"]:hover::before { left: 160%; }
     [data-testid="metric-container"]:hover {
         transform: translateY(-2px) !important;
-        border-color: rgba(0,255,136,0.28) !important;
-        box-shadow:
-            0 8px 32px rgba(0,0,0,0.45),
-            0 0 22px rgba(0,255,136,0.08),
-            inset 0 1px 0 rgba(255,255,255,0.1) !important;
+        border-color: rgba(59,130,246,0.28) !important;
+        
     }
     [data-testid="stMetricLabel"] {
-        color: #4a5568 !important;
+        color: #404040 !important;
         font-size: 0.65rem !important;
         letter-spacing: 0.15em;
         text-transform: uppercase;
-        font-family: 'JetBrains Mono', monospace !important;
+        font-family: 'Inter', monospace !important;
     }
     [data-testid="stMetricValue"] {
-        color: #e2e8f0 !important;
+        color: #e5e5e5 !important;
         font-size: 1.95rem !important;
         font-weight: 700;
-        text-shadow: 0 0 20px rgba(0,255,136,0.15);
+        
     }
     [data-testid="stMetricDelta"] { font-size: 0.68rem !important; }
 
@@ -138,13 +134,13 @@ st.markdown(
         backdrop-filter: blur(16px);
         padding: 1.1rem 1.8rem;
         border-radius: 14px;
-        border: 1px solid rgba(0,255,136,0.12);
-        border-bottom: 2px solid #00ff88;
+        border: 1px solid rgba(59,130,246,0.12);
+        border-bottom: 2px solid #3b82f6;
         margin-bottom: 1.4rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 0 40px rgba(0,255,136,0.04), inset 0 1px 0 rgba(255,255,255,0.05);
+        
         position: relative;
         overflow: hidden;
     }
@@ -154,42 +150,42 @@ st.markdown(
         position: absolute;
         top: -40px; left: -40px;
         width: 180px; height: 180px;
-        background: radial-gradient(circle, rgba(0,255,136,0.08) 0%, transparent 70%);
-        animation: cornerGlow 4s ease-in-out infinite alternate;
+        background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+        animation: none;
     }
     @keyframes cornerGlow {
         0%   { opacity: 0.6; transform: scale(1); }
         100% { opacity: 1.0; transform: scale(1.3); }
     }
     .aegis-title {
-        font-family: 'JetBrains Mono', monospace;
-        color: #e2e8f0;
+        font-family: 'Inter', monospace;
+        color: #e5e5e5;
         font-size: 1.15rem;
         font-weight: 700;
         letter-spacing: 0.07em;
         margin: 0;
-        text-shadow: 0 0 30px rgba(0,255,136,0.2);
+        
     }
-    .aegis-title span { color: #00ff88; }
+    .aegis-title span { color: #e5e5e5; }
     .engine-badge {
         display: flex; align-items: center; gap: 9px;
-        color: #00ff88; font-family: 'JetBrains Mono', monospace;
+        color: #e5e5e5; font-family: 'Inter', monospace;
         font-size: 0.72rem; font-weight: 600;
-        background: rgba(0,255,136,0.05);
-        border: 1px solid rgba(0,255,136,0.2);
+        background: rgba(59,130,246,0.05);
+        border: 1px solid rgba(59,130,246,0.2);
         border-radius: 20px; padding: 5px 14px;
-        box-shadow: 0 0 12px rgba(0,255,136,0.06);
+        
     }
     .pulse-dot {
         width: 8px; height: 8px; border-radius: 50%;
-        background: #00ff88;
-        box-shadow: 0 0 8px #00ff88, 0 0 16px rgba(0,255,136,0.5);
-        animation: pa 1.6s infinite; flex-shrink: 0;
+        background: #3b82f6;
+        
+        animation: none; flex-shrink: 0;
     }
     @keyframes pa {
-        0%   { box-shadow: 0 0 0 0 rgba(0,255,136,0.7); }
-        70%  { box-shadow: 0 0 0 8px rgba(0,255,136,0); }
-        100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+        0%   {  }
+        70%  {  }
+        100% {  }
     }
 
     /* ══════════════════════════════════════════════════════════════
@@ -202,7 +198,7 @@ st.markdown(
         border: 1px solid rgba(255,255,255,0.08) !important;
         color: #6b7280 !important;
         border-radius: 8px !important;
-        font-family: 'JetBrains Mono', monospace !important;
+        font-family: 'Inter', monospace !important;
         font-size: 0.7rem !important;
         letter-spacing: 0.07em !important;
         padding: 0.45rem 0.9rem !important;
@@ -225,48 +221,45 @@ st.markdown(
     }
     .stButton > button:hover::after { left: 150%; }
     .stButton > button:hover {
-        border-color: #00ff88 !important;
-        color: #00ff88 !important;
-        background: rgba(0,255,136,0.05) !important;
-        box-shadow:
-            0 0 14px rgba(0,255,136,0.18),
-            0 0 28px rgba(0,255,136,0.07),
-            inset 0 0 8px rgba(0,255,136,0.03) !important;
+        border-color: #e5e5e5 !important;
+        color: #e5e5e5 !important;
+        background: rgba(59,130,246,0.05) !important;
+        
         transform: translateY(-1px) !important;
     }
     .stButton > button:active {
         transform: translateY(0px) !important;
-        box-shadow: 0 0 6px rgba(0,255,136,0.15) !important;
+        
     }
     /* Isolation / EXECUTE button */
     .isolation-btn > button {
         background: linear-gradient(135deg, rgba(107,0,0,0.8), rgba(179,0,0,0.8)) !important;
-        border: 1px solid rgba(255,60,60,0.4) !important;
+        border: 1px solid rgba(218,55,60,0.3) !important;
         color: #fff !important;
         font-weight: 700 !important;
         letter-spacing: 0.1em !important;
-        box-shadow: 0 0 10px rgba(255,0,0,0.12) !important;
+        
     }
     .isolation-btn > button:hover {
         background: linear-gradient(135deg, rgba(150,0,0,0.9), rgba(220,0,0,0.9)) !important;
-        border-color: rgba(255,60,60,0.8) !important;
-        box-shadow: 0 0 28px rgba(255,0,0,0.35), inset 0 0 10px rgba(255,0,0,0.1) !important;
+        border-color: rgba(218,55,60,0.8) !important;
+        
         color: #fff !important;
     }
     /* Download button */
     .stDownloadButton > button {
-        background: rgba(0,255,136,0.06) !important;
-        border: 1px solid rgba(0,255,136,0.25) !important;
-        color: #00ff88 !important;
-        font-family: 'JetBrains Mono', monospace !important;
+        background: rgba(59,130,246,0.1) !important;
+        border: 1px solid rgba(59,130,246,0.25) !important;
+        color: #e5e5e5 !important;
+        font-family: 'Inter', monospace !important;
         font-size: 0.7rem !important;
         letter-spacing: 0.08em !important;
         transition: all 0.18s !important;
     }
     .stDownloadButton > button:hover {
-        background: rgba(0,255,136,0.12) !important;
-        box-shadow: 0 0 20px rgba(0,255,136,0.22) !important;
-        border-color: #00ff88 !important;
+        background: rgba(59,130,246,0.12) !important;
+        
+        border-color: #e5e5e5 !important;
         transform: translateY(-1px) !important;
     }
 
@@ -276,50 +269,50 @@ st.markdown(
     [data-testid="stDataFrame"] {
         border-radius: 10px !important;
         overflow: hidden !important;
-        border: 1px solid #1a2433 !important;
+        border: 1px solid #1e293b !important;
     }
 
     /* Critical row glow injected via JS (see below) — CSS class hooks */
     tr.row-critical {
-        background: rgba(255,60,60,0.07) !important;
-        box-shadow: inset 3px 0 0 #ff3c3c, 0 0 12px rgba(255,60,60,0.15);
-        animation: rowPulse 2.5s ease-in-out infinite;
+        background: rgba(218,55,60,0.07) !important;
+        
+        animation: none;
     }
     tr.row-high {
         background: rgba(255,165,0,0.05) !important;
-        box-shadow: inset 3px 0 0 #ffa500;
+        
     }
     tr.row-benign {
-        background: rgba(0,255,136,0.025) !important;
-        box-shadow: inset 3px 0 0 rgba(0,255,136,0.4);
+        background: rgba(59,130,246,0.025) !important;
+        
     }
     @keyframes rowPulse {
-        0%, 100% { box-shadow: inset 3px 0 0 #ff3c3c, 0 0 8px  rgba(255,60,60,0.12); }
-        50%       { box-shadow: inset 3px 0 0 #ff3c3c, 0 0 20px rgba(255,60,60,0.28); }
+        0%, 100% {  }
+        50%       {  }
     }
 
     /* ══════════════════════════════════════════════════════════════
        6. TABS
     ══════════════════════════════════════════════════════════════ */
     [data-testid="stTabs"] button {
-        font-family: 'JetBrains Mono', monospace !important;
+        font-family: 'Inter', monospace !important;
         font-size: 0.73rem !important;
         letter-spacing: 0.12em !important;
         text-transform: uppercase !important;
-        color: #4a5568 !important;
+        color: #404040 !important;
         border-bottom: 2px solid transparent !important;
         padding: 0.6rem 1.4rem !important;
         transition: all 0.2s !important;
         background: transparent !important;
     }
     [data-testid="stTabs"] button[aria-selected="true"] {
-        color: #00ff88 !important;
-        border-bottom: 2px solid #00ff88 !important;
-        text-shadow: 0 0 12px rgba(0,255,136,0.6);
+        color: #e5e5e5 !important;
+        border-bottom: 2px solid #3b82f6 !important;
+        
     }
     [data-testid="stTabs"] button:hover {
-        color: #c9d1d9 !important;
-        text-shadow: 0 0 8px rgba(200,210,220,0.2);
+        color: #e5e5e5 !important;
+        
     }
     [data-testid="stTabsContent"] { padding-top: 1.2rem; }
 
@@ -328,52 +321,52 @@ st.markdown(
     ══════════════════════════════════════════════════════════════ */
     [data-testid="stExpander"] {
         background: rgba(255,255,255,0.018) !important;
-        border: 1px solid #1a2433 !important;
+        border: 1px solid #1e293b !important;
         border-radius: 10px !important;
         backdrop-filter: blur(8px) !important;
         transition: border-color 0.2s !important;
     }
     [data-testid="stExpander"]:hover {
-        border-color: rgba(255,255,255,0.1) !important;
+        border-color: #404040 !important;
     }
-    [data-testid="stExpanderToggleIcon"] { color: #4a5568; }
+    [data-testid="stExpanderToggleIcon"] { color: #404040; }
 
     /* ══════════════════════════════════════════════════════════════
        8. TRIAGE CARDS
     ══════════════════════════════════════════════════════════════ */
     .triage-card {
-        background: rgba(255,60,60,0.04);
-        border: 1px solid rgba(255,60,60,0.18);
-        border-left: 3px solid #ff3c3c;
+        background: rgba(218,55,60,0.04);
+        border: 1px solid rgba(218,55,60,0.18);
+        border-left: 3px solid #da373c;
         border-radius: 12px;
         padding: 14px 18px;
         margin-bottom: 12px;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: 'Inter', monospace;
         backdrop-filter: blur(6px);
         transition: all 0.2s ease;
         position: relative;
         overflow: hidden;
     }
     .triage-card:hover {
-        border-color: rgba(255,60,60,0.45);
-        box-shadow: 0 0 18px rgba(255,60,60,0.1), inset 0 0 8px rgba(255,60,60,0.03);
+        border-color: rgba(218,55,60,0.45);
+        
         transform: translateX(2px);
     }
-    .triage-score { color: #ff3c3c; font-size: 1.5rem; font-weight: 900; text-shadow: 0 0 16px rgba(255,60,60,0.5); }
-    .triage-meta  { color: #4a5568; font-size: 0.65rem; margin-top: 3px; }
+    .triage-score { color: #da373c; font-size: 1.5rem; font-weight: 900;  }
+    .triage-meta  { color: #404040; font-size: 0.65rem; margin-top: 3px; }
 
     /* ══════════════════════════════════════════════════════════════
        9. SIDEBAR — Glass panel
     ══════════════════════════════════════════════════════════════ */
     [data-testid="stSidebar"] {
-        background-color: #0d1117;
-        border-right: 1px solid #1a2433;
+        background-color: #0a0a0a;
+        border-right: 1px solid #1e293b;
     }
 
     /* ── Scrollbar ── */
     ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: #070b11; }
-    ::-webkit-scrollbar-thumb { background: #1a2433; border-radius: 2px; }
+    ::-webkit-scrollbar-track { background: #0a0a0a; }
+    ::-webkit-scrollbar-thumb { background: #171717; border-radius: 2px; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -447,10 +440,10 @@ def row_color(score: float) -> str:
     except (ValueError, TypeError):
         score = 0.0
     if score > 7.0:
-        return "background-color:rgba(255,60,60,0.15); color:#ff6b6b;"
+        return "background-color:rgba(218,55,60,0.15); color:#ff6b6b;"
     if score >= 4.0:
         return "background-color:rgba(255,165,0,0.12); color:#ffa94d;"
-    return "background-color:rgba(0,255,136,0.05); color:#69db7c;"
+    return "background-color:rgba(59,130,246,0.05); color:#60a5fa;"
 
 
 # ── Geo-Map ───────────────────────────────────────────────────────────
@@ -469,11 +462,11 @@ def build_threat_map(df: pd.DataFrame) -> go.Figure:
         )
         sizes.append(6 + score * 2.4)
         if score > 7.0:
-            colors.append("rgba(255,60,60,0.85)"); ht_lats.append(lat); ht_lons.append(lon)
+            colors.append("rgba(218,55,60,0.85)"); ht_lats.append(lat); ht_lons.append(lon)
         elif score >= 4.0:
             colors.append("rgba(255,165,0,0.75)")
         else:
-            colors.append("rgba(0,255,136,0.55)")
+            colors.append("rgba(59,130,246,0.55)")
 
     fig = go.Figure()
     fig.add_trace(go.Scattergeo(
@@ -487,8 +480,8 @@ def build_threat_map(df: pd.DataFrame) -> go.Figure:
     if ht_lats:
         fig.add_trace(go.Scattergeo(
             lon=ht_lons, lat=ht_lats, mode="markers",
-            marker=dict(size=28, color="rgba(255,0,0,0.07)",
-                        line=dict(width=1.5, color="rgba(255,60,60,0.35)"),
+            marker=dict(size=28, color="rgba(218,55,60,0.07)",
+                        line=dict(width=1.5, color="rgba(218,55,60,0.35)"),
                         sizemode="diameter"),
             hoverinfo="skip", showlegend=False,
         ))
@@ -497,12 +490,12 @@ def build_threat_map(df: pd.DataFrame) -> go.Figure:
         projection_type="natural earth",
         showland=True,    landcolor="#0c1520",
         showocean=True,   oceancolor="#060d14",
-        showcountries=True, countrycolor="#1a2433",
-        showcoastlines=True, coastlinecolor="#1a2433",
-        showframe=False,  bgcolor="#070b11",
+        showcountries=True, countrycolor="#1e293b",
+        showcoastlines=True, coastlinecolor="#1e293b",
+        showframe=False,  bgcolor="#0a0a0a",
     )
     fig.update_layout(
-        paper_bgcolor="#070b11", plot_bgcolor="#070b11",
+        paper_bgcolor="#0a0a0a", plot_bgcolor="#0a0a0a",
         margin=dict(l=0, r=0, t=0, b=0), height=360,
         legend=dict(font=dict(color="#4a5568", size=10),
                     bgcolor="rgba(0,0,0,0)", x=0.01, y=0.02),
@@ -527,9 +520,9 @@ def build_area_chart(df: pd.DataFrame) -> go.Figure:
 
     # ── Critical band (score > 7) reference line ──
     fig.add_hline(y=7.0, line_dash="dot",
-                  line=dict(color="rgba(255,60,60,0.35)", width=1),
+                  line=dict(color="rgba(218,55,60,0.35)", width=1),
                   annotation_text="CRITICAL THRESHOLD",
-                  annotation_font=dict(size=9, color="rgba(255,60,60,0.6)"),
+                  annotation_font=dict(size=9, color="rgba(218,55,60,0.6)"),
                   annotation_position="top left")
 
     fig.add_hline(y=4.0, line_dash="dot",
@@ -541,7 +534,7 @@ def build_area_chart(df: pd.DataFrame) -> go.Figure:
     # ── Raw data bars (very faint) ──
     fig.add_trace(go.Bar(
         x=binned["ts"], y=binned["avg_score"],
-        marker_color="rgba(0,255,136,0.04)",
+        marker_color="rgba(59,130,246,0.04)",
         marker_line_width=0,
         name="Raw avg",
         hovertemplate="%{y:.2f}<extra>Raw</extra>",
@@ -551,9 +544,9 @@ def build_area_chart(df: pd.DataFrame) -> go.Figure:
     fig.add_trace(go.Scatter(
         x=binned["ts"], y=binned["smooth"],
         mode="lines",
-        line=dict(color="#00ff88", width=2.5, shape="spline", smoothing=1.2),
+        line=dict(color="#3b82f6", width=2.5, shape="spline", smoothing=1.2),
         fill="tozeroy",
-        fillcolor="rgba(0,255,136,0.06)",
+        fillcolor="rgba(59,130,246,0.1)",
         name="Avg Threat Score",
         hovertemplate="<b>%{x|%H:%M}</b><br>Avg Score: %{y:.2f}<extra></extra>",
     ))
@@ -564,19 +557,19 @@ def build_area_chart(df: pd.DataFrame) -> go.Figure:
         fig.add_trace(go.Scatter(
             x=crit["ts"], y=crit["smooth"],
             mode="lines",
-            line=dict(color="#ff3c3c", width=2.5, shape="spline", smoothing=1.2),
+            line=dict(color="#da373c", width=2.5, shape="spline", smoothing=1.2),
             fill="tozeroy",
-            fillcolor="rgba(255,60,60,0.08)",
+            fillcolor="rgba(218,55,60,0.08)",
             name="Critical Zone",
             hovertemplate="<b>%{x|%H:%M}</b><br>CRITICAL: %{y:.2f}<extra></extra>",
         ))
 
     fig.update_layout(
-        paper_bgcolor="#070b11",
-        plot_bgcolor="#070b11",
+        paper_bgcolor="#0a0a0a",
+        plot_bgcolor="#0a0a0a",
         margin=dict(l=0, r=10, t=20, b=0),
         height=340,
-        font=dict(family="JetBrains Mono", color="#4a5568", size=10),
+        font=dict(family="Inter", color="#4a5568", size=10),
         xaxis=dict(
             showgrid=True, gridcolor="rgba(255,255,255,0.04)",
             zeroline=False, showline=False,
@@ -595,8 +588,8 @@ def build_area_chart(df: pd.DataFrame) -> go.Figure:
             orientation="h", x=0, y=1.08,
         ),
         hovermode="x unified",
-        hoverlabel=dict(bgcolor="#0d1117", font=dict(size=10, color="#e2e8f0"),
-                        bordercolor="#1a2433"),
+        hoverlabel=dict(bgcolor="#0d1117", font=dict(size=10, color="#1e293b"),
+                        bordercolor="#1e293b"),
     )
     return fig
 
@@ -617,7 +610,7 @@ def build_topology_graph(
 
     # ── Colour palette ───────────────────────────────────────────────
     c_bg    = "#050810"
-    c_attack = "#ff3c3c" if score > 7.0 else "#ffa500" if score >= 4.0 else "#00ff88"
+    c_attack = "#da373c" if score > 7.0 else "#f59e0b" if score >= 4.0 else "#3b82f6"
     c_event  = "#f97316"
     c_user   = "#38bdf8"
     c_mitre  = "#a855f7"
@@ -625,9 +618,9 @@ def build_topology_graph(
 
     sev_label = "CRITICAL" if score > 7.0 else "HIGH" if score >= 4.0 else "LOW"
     badge_bg  = (
-        "rgba(255,60,60,0.12)"  if score > 7.0  else
+        "rgba(218,55,60,0.1)"  if score > 7.0  else
         "rgba(255,165,0,0.10)"  if score >= 4.0 else
-        "rgba(0,255,136,0.08)"
+        "rgba(59,130,246,0.08)"
     )
 
     EVENT_META: dict[str, tuple[str, str]] = {
@@ -732,7 +725,7 @@ def build_topology_graph(
 
     def _ann(x, y, text, color, size, anchor="center", bg=None, bc=None):
         d = dict(x=x, y=y, text=text,
-                 font=dict(size=size, color=color, family="JetBrains Mono"),
+                 font=dict(size=size, color=color, family="Inter"),
                  showarrow=False, xanchor=anchor)
         if bg:
             d.update(bgcolor=bg, bordercolor=bc, borderpad=4, borderwidth=1)
@@ -781,28 +774,88 @@ def build_topology_graph(
                    zeroline=False, range=[y_min, 1.6], fixedrange=True),
         hovermode="closest",
         hoverlabel=dict(bgcolor="#0d1117",
-                        font=dict(size=11, color="#e2e8f0", family="JetBrains Mono"),
-                        bordercolor="#1a2433"),
+                        font=dict(size=11, color="#1e293b", family="Inter"),
+                        bordercolor="#1e293b"),
         dragmode=False,
     )
     st.plotly_chart(fig, use_container_width=True,
                     config={"displayModeBar": False, "staticPlot": False})
 
 
+def render_blast_radius_graph(user_account: str):
+    if not user_account or user_account == "Unknown":
+        st.info("No identifiable user account for Blast Radius analysis.")
+        return
+
+    br = neo4j_client.check_blast_radius(user_account)
+    if not br:
+        st.success(f"No attack paths to Domain Admins found for '{user_account}'.")
+        return
+
+    st.markdown(
+        f"<div style='color:#da373c; font-family:monospace; font-size:0.8rem;"
+        f" letter-spacing:0.12em; margin-bottom:10px;'>CRITICAL ATTACK PATH DETECTED</div>",
+        unsafe_allow_html=True,
+    )
+    st.warning(f"Neo4j analysis confirms '{br['user']}' can reach '{br['target']}' in {br['hops']} hops.")
+
+    nodes = []
+    edges = []
+
+    # Attacker Node
+    nodes.append(Node(
+        id=br['user'],
+        label=br['user'],
+        size=400,
+        color="#da373c",
+        shape="hexagon"
+    ))
+    
+    # Target Node
+    nodes.append(Node(
+        id=br['target'],
+        label=br['target'],
+        size=500,
+        color="#3b82f6",
+        shape="diamond"
+    ))
+
+    # Add hops between them
+    # For a realistic graph we'd query all intermediate nodes, but for the UI mock we'll just connect them directly to illustrate the path.
+    edges.append(Edge(
+        source=br['user'],
+        label=f"{br['hops']} HOP(S)",
+        target=br['target'],
+        color="#da373c"
+    ))
+
+    config = Config(
+        width="100%",
+        height=300,
+        directed=True,
+        physics=True,
+        hierarchical=False,
+        nodeHighlightBehavior=True,
+        highlightColor="#F7A7A6",
+        collapsible=False,
+    )
+
+    agraph(nodes=nodes, edges=edges, config=config)
+
 def render_microscope(row_data: pd.Series, orig: pd.Series, key_prefix: str = ""):
     score  = float(row_data["threat_score"])
-    badge  = "#ff3c3c" if score > 7.0 else "#ffa500" if score >= 4.0 else "#00ff88"
+    badge  = "#da373c" if score > 7.0 else "#f59e0b" if score >= 4.0 else "#3b82f6"
     label  = "CRITICAL" if score > 7.0 else "HIGH" if score >= 4.0 else "BENIGN"
 
     st.markdown(
         f"""
         <div style="display:flex; justify-content:space-between; align-items:center;
-                    background:rgba(255,255,255,0.02); border:1px solid #1a2433;
+                    background:rgba(255,255,255,0.02); border:1px solid #1e293b;
                     border-left:3px solid {badge}; border-radius:8px;
                     padding:10px 14px; margin-bottom:10px;
-                    font-family:'JetBrains Mono',monospace;">
+                    font-family:'Inter',monospace;">
             <div>
-                <div style="color:#4a5568; font-size:0.6rem; letter-spacing:0.12em;">CONSENSUS SCORE</div>
+                <div style="color:#404040; font-size:0.6rem; letter-spacing:0.12em;">CONSENSUS SCORE</div>
                 <div style="color:{badge}; font-size:1.55rem; font-weight:900; line-height:1.1;">{score:.2f}</div>
             </div>
             <div style="text-align:right;">
@@ -810,7 +863,7 @@ def render_microscope(row_data: pd.Series, orig: pd.Series, key_prefix: str = ""
                             background:rgba(255,255,255,0.04); border-radius:10px; padding:3px 9px;">
                     {label}
                 </div>
-                <div style="color:#4a5568; font-size:0.6rem; margin-top:4px;">{row_data['source_ip']}</div>
+                <div style="color:#404040; font-size:0.6rem; margin-top:4px;">{row_data['source_ip']}</div>
             </div>
         </div>
         """,
@@ -818,16 +871,16 @@ def render_microscope(row_data: pd.Series, orig: pd.Series, key_prefix: str = ""
     )
 
     st.markdown(
-        f"<span style='font-family:monospace;font-size:0.75rem;color:#4a5568;'>"
-        f"EventID <b style='color:#8892a4'>{row_data['event_id']}</b> &nbsp;|&nbsp;"
-        f"User <b style='color:#8892a4'>{row_data['user_account']}</b>"
+        f"<span style='font-family:monospace;font-size:0.75rem;color:#404040;'>"
+        f"EventID <b style='color:#404040'>{row_data['event_id']}</b> &nbsp;|&nbsp;"
+        f"User <b style='color:#404040'>{row_data['user_account']}</b>"
         f"</span>",
         unsafe_allow_html=True,
     )
 
     # ── Lateral Movement Topology Graph ────────────────────────────
     st.markdown(
-        "<div style='font-family:monospace; color:#4a5568; font-size:0.6rem;"
+        "<div style='font-family:monospace; color:#404040; font-size:0.6rem;"
         " letter-spacing:0.15em; margin:8px 0 2px;'>ATTACK TOPOLOGY GRAPH</div>",
         unsafe_allow_html=True,
     )
@@ -846,6 +899,10 @@ def render_microscope(row_data: pd.Series, orig: pd.Series, key_prefix: str = ""
         verdicts=verdicts_raw,
         score=score,
     )
+
+    # ── Blast Radius Graph ───────────────────────────────────────────
+    with st.expander("Neo4j Blast Radius Analysis", expanded=(score > 7)):
+        render_blast_radius_graph(str(row_data["user_account"]))
 
     # ── Agent Verdict Expanders ──────────────────────────────────────
     verdicts_str = orig.get("verdicts", None)
@@ -877,7 +934,7 @@ def render_microscope(row_data: pd.Series, orig: pd.Series, key_prefix: str = ""
     if score > 7.0:
         st.markdown("---")
         st.markdown(
-            "<div style='color:#ff3c3c; font-family:monospace; font-size:0.62rem;"
+            "<div style='color:#da373c; font-family:monospace; font-size:0.62rem;"
             " letter-spacing:0.12em; margin-bottom:5px;'>CISO ACTION REQUIRED</div>",
             unsafe_allow_html=True,
         )
@@ -893,7 +950,7 @@ def render_microscope(row_data: pd.Series, orig: pd.Series, key_prefix: str = ""
 
     st.markdown("---")
     st.markdown(
-        "<div style='color:#4a5568; font-family:monospace; font-size:0.6rem;"
+        "<div style='color:#404040; font-family:monospace; font-size:0.6rem;"
         " letter-spacing:0.12em; margin-bottom:5px;'>INCIDENT REPORT</div>",
         unsafe_allow_html=True,
     )
@@ -934,17 +991,17 @@ st.markdown(
 )
 
 # ── Tab Bar ───────────────────────────────────────────────────────────
-tab_arena, tab_history, tab_triage = st.tabs([
-    "  Live Arena  ",
-    "  Historical Analytics  ",
-    "  Triage Queue  ",
+tab_overview, tab_investigation, tab_modules = st.tabs([
+    "  Overview Dashboard  ",
+    "  Deep Investigation  ",
+    "  Protection Modules  ",
 ])
 
 
 # ════════════════════════════════════════════════════════════════════
-#  TAB 1 — LIVE ARENA
+#  TAB: DEEP INVESTIGATION (Arena)
 # ════════════════════════════════════════════════════════════════════
-with tab_arena:
+with tab_investigation:
 
     @st.fragment(run_every="4s")
     def arena_fragment():
@@ -975,9 +1032,9 @@ with tab_arena:
 
         # Legend pills
         lc1, lc2, lc3, _ = st.columns([1, 1, 1, 3])
-        lc1.markdown("<span style='color:#ff3c3c;font-family:monospace;font-size:0.7rem;'>&#9679; CRITICAL (&gt;7)</span>", unsafe_allow_html=True)
-        lc2.markdown("<span style='color:#ffa500;font-family:monospace;font-size:0.7rem;'>&#9679; HIGH (4-7)</span>",       unsafe_allow_html=True)
-        lc3.markdown("<span style='color:#00ff88;font-family:monospace;font-size:0.7rem;'>&#9679; BENIGN (&lt;4)</span>",   unsafe_allow_html=True)
+        lc1.markdown("<span style='color:#da373c;font-family:monospace;font-size:0.7rem;'>&#9679; CRITICAL (&gt;7)</span>", unsafe_allow_html=True)
+        lc2.markdown("<span style='color:#f59e0b;font-family:monospace;font-size:0.7rem;'>&#9679; HIGH (4-7)</span>",       unsafe_allow_html=True)
+        lc3.markdown("<span style='color:#3b82f6;font-family:monospace;font-size:0.7rem;'>&#9679; BENIGN (&lt;4)</span>",   unsafe_allow_html=True)
 
         st.divider()
 
@@ -1006,9 +1063,9 @@ with tab_arena:
             sel = event.selection.rows
             if not sel:
                 st.markdown(
-                    """<div style="border:1px dashed #1a2433; border-radius:10px;
+                    """<div style="border:1px dashed #1e293b; border-radius:10px;
                                   padding:2.5rem 1rem; text-align:center;
-                                  color:#2d3748; font-family:'JetBrains Mono',monospace;
+                                  color:#fafafa; font-family:'Inter',monospace;
                                   font-size:0.75rem; margin-top:6px;">
                         SELECT A ROW<br>to inspect agent verdicts
                     </div>""",
@@ -1026,9 +1083,9 @@ with tab_arena:
 
 
 # ════════════════════════════════════════════════════════════════════
-#  TAB 2 — HISTORICAL ANALYTICS
+#  TAB: OVERVIEW DASHBOARD (History)
 # ════════════════════════════════════════════════════════════════════
-with tab_history:
+with tab_overview:
 
     @st.fragment(run_every="15s")
     def history_fragment():
@@ -1079,7 +1136,7 @@ with tab_history:
             orientation="h",
             marker=dict(
                 color=eid_counts["avg"],
-                colorscale=[[0, "#00ff88"], [0.4, "#ffa500"], [1.0, "#ff3c3c"]],
+                colorscale=[[0, "#3b82f6"], [0.4, "#f59e0b"], [1.0, "#da373c"]],
                 cmin=0, cmax=10,
                 colorbar=dict(
                     title=dict(text="Avg Score", font=dict(size=8, color="#4a5568")),
@@ -1090,16 +1147,16 @@ with tab_history:
             ),
             text=eid_counts["count"],
             textposition="outside",
-            textfont=dict(size=9, color="#8892a4"),
+            textfont=dict(size=9, color="#404040"),
             hovertemplate="<b>%{y}</b><br>Count: %{x}<br>Avg Score: %{marker.color:.2f}<extra></extra>",
         ))
         fig_bar.update_layout(
-            paper_bgcolor="#070b11", plot_bgcolor="#070b11",
+            paper_bgcolor="#0a0a0a", plot_bgcolor="#0a0a0a",
             height=220, margin=dict(l=0, r=60, t=0, b=0),
-            font=dict(family="JetBrains Mono", size=9, color="#4a5568"),
-            xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.03)",
+            font=dict(family="Inter", size=9, color="#4a5568"),
+            xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)",
                        zeroline=False, tickfont=dict(size=8, color="#4a5568")),
-            yaxis=dict(showgrid=False, tickfont=dict(size=9, color="#8892a4")),
+            yaxis=dict(showgrid=False, tickfont=dict(size=9, color="#404040")),
         )
         st.plotly_chart(fig_bar, use_container_width=True,
                         config={"displayModeBar": False})
@@ -1108,9 +1165,10 @@ with tab_history:
 
 
 # ════════════════════════════════════════════════════════════════════
-#  TAB 3 — TRIAGE QUEUE
+#  TAB: OVERVIEW DASHBOARD (Triage)
 # ════════════════════════════════════════════════════════════════════
-with tab_triage:
+with tab_overview:
+    st.divider()
 
     @st.fragment(run_every="5s")
     def triage_fragment():
@@ -1127,16 +1185,16 @@ with tab_triage:
 
         # Header strip
         count = len(queue)
-        badge_bg = "rgba(255,60,60,0.12)" if count > 0 else "rgba(0,255,136,0.06)"
-        badge_border = "rgba(255,60,60,0.4)" if count > 0 else "rgba(0,255,136,0.3)"
-        badge_color  = "#ff3c3c" if count > 0 else "#00ff88"
+        badge_bg = "rgba(218,55,60,0.1)" if count > 0 else "rgba(59,130,246,0.1)"
+        badge_border = "rgba(218,55,60,0.3)" if count > 0 else "rgba(59,130,246,0.3)"
+        badge_color  = "#da373c" if count > 0 else "#3b82f6"
         badge_text   = f"{count} INCIDENT{'S' if count != 1 else ''} AWAITING TRIAGE" if count > 0 else "ALL CLEAR - NO PENDING THREATS"
 
         st.markdown(
             f"""
             <div style="background:{badge_bg}; border:1px solid {badge_border};
                         border-radius:10px; padding:12px 20px; margin-bottom:20px;
-                        font-family:'JetBrains Mono',monospace; font-size:0.8rem;
+                        font-family:'Inter',monospace; font-size:0.8rem;
                         color:{badge_color}; font-weight:700; letter-spacing:0.1em;
                         display:flex; align-items:center; gap:12px;">
                 <span style="font-size:1.4rem;">{'⚠' if count > 0 else '✓'}</span>
@@ -1149,7 +1207,7 @@ with tab_triage:
         if queue.empty:
             st.markdown(
                 """<div style="text-align:center; padding:4rem 0;
-                              color:#2d3748; font-family:'JetBrains Mono',monospace;
+                              color:#fafafa; font-family:'Inter',monospace;
                               font-size:0.85rem;">
                     No critical incidents currently awaiting triage.<br>
                     <span style='font-size:0.7rem;'>Swarm engine is monitoring...</span>
@@ -1187,15 +1245,15 @@ with tab_triage:
                         pass
 
                 is_selected = st.session_state.triage_sel == i
-                border_color = "#ff3c3c" if not is_selected else "#ff8080"
-                bg_color     = "rgba(255,60,60,0.05)" if not is_selected else "rgba(255,60,60,0.12)"
+                border_color = "#da373c" if not is_selected else "#ef4444"
+                bg_color     = "rgba(218,55,60,0.03)" if not is_selected else "rgba(218,55,60,0.1)"
 
                 st.markdown(
                     f"""
                     <div class="triage-card" style="background:{bg_color};border-color:{border_color};cursor:pointer;">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                             <div>
-                                <div style="color:#e2e8f0; font-size:0.75rem; font-weight:600;">
+                                <div style="color:#e5e5e5; font-size:0.75rem; font-weight:600;">
                                     {row['source_ip']}
                                 </div>
                                 <div class="triage-meta">
@@ -1225,9 +1283,9 @@ with tab_triage:
 
             if sel_i is None:
                 st.markdown(
-                    """<div style="border:1px dashed #1a2433; border-radius:10px;
-                                  padding:2.5rem 1rem; text-align:center; color:#2d3748;
-                                  font-family:'JetBrains Mono',monospace; font-size:0.75rem;">
+                    """<div style="border:1px dashed #1e293b; border-radius:10px;
+                                  padding:2.5rem 1rem; text-align:center; color:#fafafa;
+                                  font-family:'Inter',monospace; font-size:0.75rem;">
                         CLICK INSPECT<br>to analyse an incident
                     </div>""",
                     unsafe_allow_html=True,
@@ -1243,7 +1301,142 @@ with tab_triage:
                     )
 
     triage_fragment()
+    
+# ════════════════════════════════════════════════════════════════════
+#  TAB: PROTECTION MODULES (Intel)
+# ════════════════════════════════════════════════════════════════════
+with tab_modules:
+    with st.expander("Falcon Intelligence — CTI Feeds", expanded=True):
+    
+        colA, colB = st.columns([1, 1])
+        with colA:
+            st.info("The Intel Agent actively monitors the event stream, intercepting IPs and hashes and querying the local MISP backend for known APT indicators.")
+            st.markdown("### Known Active Campaigns (MISP DB)")
+            st.markdown("- 🔴 **APT29 (Cozy Bear)**: Associated with IPs 185.11.12.13, 192.0.2.14")
+            st.markdown("- 🔴 **LockBit Ransomware**: Known hashes and staging domains.")
+        
+        with colB:
+            st.markdown("### Agent Status")
+            st.metric("Status", "ONLINE", delta="Swarm Integrated")
+            st.metric("Total IoC Hits (Session)", "3")
 
+
+# ════════════════════════════════════════════════════════════════════
+#  TAB: PROTECTION MODULES (Prevent)
+# ════════════════════════════════════════════════════════════════════
+with tab_modules:
+    with st.expander("Falcon Prevent — Next-Gen AV", expanded=True):
+    
+        colC, colD = st.columns([1, 1])
+        with colC:
+            st.info("The Endpoint Agent analyzes process executions for YARA matches and autonomously dispatches `kill-process` active responses.")
+            st.markdown("### Active Blocks / Quarantines")
+            st.markdown("🟢 No active processes quarantined recently.")
+        with colD:
+            st.markdown("### Engine Status")
+            st.metric("YARA Scanner", "ONLINE", delta="Active")
+            st.metric("Process Killer (AR)", "READY")
+
+
+# ════════════════════════════════════════════════════════════════════
+#  TAB: PROTECTION MODULES (Spotlight)
+# ════════════════════════════════════════════════════════════════════
+with tab_modules:
+    with st.expander("Falcon Spotlight — Continuous Vulnerability Management", expanded=True):
+    
+        col_v1, col_v2 = st.columns([1.5, 1])
+        with col_v1:
+            st.info("The Vulnerability Agent continuously parses endpoint telemetry for unpatched software and known CVEs. It evaluates exploitability dynamically based on network exposure.")
+            st.markdown("### Top Critical Vulnerabilities (Endpoint Exposure)")
+            
+            vuln_data = [
+                {"CVE": "CVE-2021-44228", "Severity": "CRITICAL", "Component": "log4j-core", "Status": "Unpatched", "Endpoints": 3},
+                {"CVE": "CVE-2023-38545", "Severity": "HIGH", "Component": "curl", "Status": "Mitigated", "Endpoints": 12},
+                {"CVE": "CVE-2024-21626", "Severity": "HIGH", "Component": "runc", "Status": "Unpatched", "Endpoints": 2},
+            ]
+            import pandas as pd
+            vuln_df = pd.DataFrame(vuln_data)
+            # Apply some conditional styling for Severity
+            def color_severity(val):
+                if val == "CRITICAL": return 'color: #da373c; font-weight: bold;'
+                if val == "HIGH": return 'color: #f59e0b; font-weight: bold;'
+                return ''
+            st.dataframe(vuln_df.style.map(color_severity, subset=['Severity']), use_container_width=True, hide_index=True)
+            
+        with col_v2:
+            st.markdown("### Agent Status")
+            st.metric("Vulnerability Scanner", "ONLINE", delta="Swarm Integrated")
+            st.metric("Zero-Days Detected", "0")
+            
+            st.markdown("### Exposure Risk")
+            st.progress(0.72, text="72% Enterprise Risk Score (High)")
+
+# ════════════════════════════════════════════════════════════════════
+#  TAB: DEEP INVESTIGATION (Insight)
+# ════════════════════════════════════════════════════════════════════
+with tab_investigation:
+    st.divider()
+    st.markdown("<div class='section-label'>Falcon Insight — EDR Forensics & Log Search</div>", unsafe_allow_html=True)
+    
+    st.info("Query the local telemetry database to perform deep-dive forensics, hunt for IOCs, and construct process execution trees.")
+    
+    with st.container(border=True):
+        st.markdown("### Raw EDR Search")
+        col_s1, col_s2, col_s3, col_s4 = st.columns([2, 1, 1, 1])
+        search_ip = col_s1.text_input("IP Address / Hostname")
+        search_user = col_s2.text_input("User Account")
+        search_event = col_s3.text_input("Event ID (e.g., 4688)")
+        search_btn = col_s4.button("Execute Query", use_container_width=True)
+        
+        if search_btn:
+            # Build query
+            query = "SELECT timestamp, source_ip, user_account, event_id, raw_log FROM security_events WHERE 1=1"
+            params = []
+            if search_ip:
+                query += " AND source_ip LIKE ?"
+                params.append(f"%{search_ip}%")
+            if search_user:
+                query += " AND user_account LIKE ?"
+                params.append(f"%{search_user}%")
+            if search_event:
+                query += " AND event_id = ?"
+                params.append(search_event)
+            
+            query += " ORDER BY timestamp DESC LIMIT 50"
+            
+            try:
+                import sqlite3
+                from src.db.database import DB_PATH
+                with sqlite3.connect(str(DB_PATH)) as conn:
+                    df_search = pd.read_sql(query, conn, params=params)
+                
+                if not df_search.empty:
+                    st.dataframe(df_search, use_container_width=True, hide_index=True)
+                else:
+                    st.warning("No EDR telemetry matched your query.")
+            except Exception as e:
+                st.error(f"Search failed: {e}")
+                
+    st.divider()
+    
+    with st.container(border=True):
+        st.markdown("### Process Execution Tree (Simulated)")
+        st.caption("Visualizing process genealogy for critical suspicious behaviors.")
+        
+        # A mock visualization block for process trees
+        st.markdown(
+            """
+            <div style="font-family:'Inter',monospace; font-size:0.85rem; color:#404040; background:#ffffff; padding:15px; border-radius:8px;">
+            <pre>
+[SYSTEM] wininit.exe (PID: 532)
+ └── [SYSTEM] services.exe (PID: 672)
+      └── [SYSTEM] wazuh-agent.exe (PID: 2314)
+           └── [SYSTEM] cmd.exe (PID: 5122) -c "whoami /priv"
+                └── <span style="color:#da373c; font-weight:bold;">[ATTACKER] powershell.exe (PID: 6920) -nop -exec bypass -enc JABz...</span>
+            </pre>
+            </div>
+            """, unsafe_allow_html=True
+        )
 
 # ── CISO Copilot Sidebar ─────────────────────────────────────────────
 with st.sidebar:
@@ -1251,11 +1444,11 @@ with st.sidebar:
     # Header
     st.markdown(
         """
-        <div style="font-family:'JetBrains Mono',monospace; color:#00ff88;
+        <div style="font-family:'Inter',monospace; color:#3b82f6;
                     font-size:0.8rem; font-weight:700; letter-spacing:0.12em;">
             CISO COPILOT
         </div>
-        <div style="font-family:'JetBrains Mono',monospace; color:#4a5568;
+        <div style="font-family:'Inter',monospace; color:#404040;
                     font-size:0.62rem; margin-top:2px; margin-bottom:10px;">
             AI analyst &bull; Live DB access
         </div>
@@ -1285,12 +1478,12 @@ with st.sidebar:
 
             is_user = role == "user"
             align   = "right" if is_user else "left"
-            bg      = "rgba(0,255,136,0.06)" if is_user else "rgba(255,255,255,0.03)"
-            border  = "rgba(0,255,136,0.2)"  if is_user else "#1a2433"
+            bg      = "rgba(59,130,246,0.1)" if is_user else "rgba(255,255,255,0.05)"
+            border  = "rgba(59,130,246,0.2)"  if is_user else "#1e293b"
             label   = "YOU" if is_user else "COPILOT"
-            label_color = "#00ff88" if is_user else "#4a5568"
+            label_color = "#3b82f6" if is_user else "#4a5568"
 
-            conf_colors = {"high": "#00ff88", "medium": "#ffa500", "low": "#ff3c3c"}
+            conf_colors = {"high": "#3b82f6", "medium": "#f59e0b", "low": "#da373c"}
             conf_color  = conf_colors.get(str(conf).lower(), "#4a5568")
 
             st.html(
@@ -1299,7 +1492,7 @@ with st.sidebar:
                     <div style="display:inline-block; max-width:90%; text-align:left;
                                 background:{bg}; border:1px solid {border};
                                 border-radius:8px; padding:8px 11px;">
-                        <div style="font-family:'JetBrains Mono',monospace;
+                        <div style="font-family:'Inter',monospace;
                                     font-size:0.55rem; color:{label_color};
                                     letter-spacing:0.1em; margin-bottom:4px;">{label}</div>
                         <div style="font-family:Inter,sans-serif; font-size:0.75rem;
@@ -1315,7 +1508,7 @@ with st.sidebar:
 
     # ── One-click suggestions ────────────────────────────────────────
     st.markdown(
-        "<div style='font-family:monospace; color:#4a5568; font-size:0.6rem;"
+        "<div style='font-family:monospace; color:#404040; font-size:0.6rem;"
         " letter-spacing:0.1em; margin:8px 0 4px;'>QUICK QUERIES</div>",
         unsafe_allow_html=True,
     )
@@ -1360,7 +1553,7 @@ with st.sidebar:
 
     # ── Legend ───────────────────────────────────────────────────────
     st.markdown(
-        "<div style='font-family:monospace; color:#4a5568; font-size:0.6rem;"
+        "<div style='font-family:monospace; color:#404040; font-size:0.6rem;"
         " letter-spacing:0.1em; margin-bottom:6px;'>SEVERITY LEGEND</div>",
         unsafe_allow_html=True,
     )

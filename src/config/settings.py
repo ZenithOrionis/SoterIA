@@ -58,6 +58,19 @@ class Settings(BaseSettings):
         description="Base URL of the local Ollama server.",
     )
 
+    # ── ElasticLake Integrations (Wazuh, ES, Neo4j) ──────────────────
+    ES_URL: str = Field(default="https://localhost:9200")
+    ES_USER: str = Field(default="elastic")
+    ES_PASS: str = Field(default="changeme123!")
+    
+    WAZUH_API_URL: str = Field(default="https://localhost:55000")
+    WAZUH_USER: str = Field(default="wazuh-wui")
+    WAZUH_PASS: str = Field(default="wazuh-wui")
+    
+    NEO4J_URI: str = Field(default="bolt://localhost:7687")
+    NEO4J_USER: str = Field(default="neo4j")
+    NEO4J_PASS: str = Field(default="changeme123!")
+
     # ── Pydantic-Settings wiring ─────────────────────────────────────
     model_config = {
         "env_file": ".env",

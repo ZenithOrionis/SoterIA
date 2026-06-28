@@ -26,45 +26,32 @@ import asyncio
 import logging
 from typing import Any
 
-from src.agents import identity_agent, network_agent, endpoint_agent
+from src.agents import identity_agent, network_agent, endpoint_agent, intel_agent, vuln_agent
 from src.agents.schemas import AgentVerdict
 from src.db.database import update_event_verdict
+from src.services.active_response import trigger_firewall_drop, trigger_kill_process
 
 logger = logging.getLogger("soteria.tribunal")
 
-
 async def evaluate_log(log_entry: dict[str, Any]) -> dict[str, Any]:
-    """Run the full swarm consensus pipeline on a single security event.
-
-    Parameters
-    ----------
-    log_entry : dict
-        A ``security_events`` row dict as returned by
-        ``fetch_pending_logs()``.
-
-    Returns
-    -------
-    dict
-        Summary with keys: ``event_id``, ``windows_event_id``,
-        ``final_score``, ``verdicts`` (list of verdict dicts).
-    """
-
-    # -- 1. Fan-out: all 3 agents run concurrently ---------------------
-    identity_verdict, network_verdict, endpoint_verdict = await asyncio.gather(
+    # -- 1. Fan-out: all 5 agents run concurrently ---------------------
+    identity_verdict, network_verdict, endpoint_verdict, intel_verdict, vuln_verdict = await asyncio.gather(
         identity_agent.analyse(log_entry),
         network_agent.analyse(log_entry),
         endpoint_agent.analyse(log_entry),
+        intel_agent.analyse(log_entry),
+        vuln_agent.analyse(log_entry),
     )
 
     verdicts: list[AgentVerdict] = [
         identity_verdict,
         network_verdict,
         endpoint_verdict,
+        intel_verdict,
+        vuln_verdict,
     ]
 
     # -- 2. Deterministic scoring (Law 3) ------------------------------
-    #    weighted_sum = sum(score * confidence)
-    #    final_score  = weighted_sum / N
     weighted_sum = sum(v.risk_score * v.confidence for v in verdicts)
     final_score = round(weighted_sum / len(verdicts), 2)
 
@@ -78,6 +65,38 @@ async def evaluate_log(log_entry: dict[str, Any]) -> dict[str, Any]:
         status="analysed",
         verdicts=json.dumps([v.model_dump() for v in verdicts]),
     )
+
+    if final_score >= 7.0:
+        logger.info(f"Critical threat score reached ({final_score}). Triggering autonomous containment.")
+        
+        # Determine appropriate Active Response
+        raw_log_str = log_entry.get("raw_log", "")
+        
+        # If it's a YARA or endpoint process threat, kill the process
+        if "YARA" in raw_log_str or "malware" in raw_log_str.lower() or endpoint_verdict.risk_score >= 8.0:
+            # Attempt to extract agent_id and PID from raw log
+            agent_id = "000" # fallback
+            pid = None
+            try:
+                raw_json = json.loads(raw_log_str)
+                if "agent" in raw_json and "id" in raw_json["agent"]:
+                    agent_id = raw_json["agent"]["id"]
+                # Try to find PID
+                if "data" in raw_json and "win" in raw_json["data"] and "eventdata" in raw_json["data"]["win"]:
+                    pid = raw_json["data"]["win"]["eventdata"].get("processId")
+                elif "process" in raw_json and "pid" in raw_json["process"]:
+                    pid = raw_json["process"]["pid"]
+            except Exception:
+                pass
+                
+            if pid:
+                trigger_kill_process(agent_id, str(pid))
+            else:
+                logger.warning("Could not extract PID for kill-process, falling back to firewall-drop...")
+                trigger_firewall_drop(log_entry.get("source_ip"))
+        else:
+            # Default to firewall drop against the attacker IP
+            trigger_firewall_drop(log_entry.get("source_ip"))
 
     # -- 4. Build summary ----------------------------------------------
     summary = {

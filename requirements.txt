@@ -7,3 +7,7 @@ pydantic-settings
 python-dotenv
 plotly
 streamlit-agraph
+
+elasticsearch
+neo4j
+urllib3

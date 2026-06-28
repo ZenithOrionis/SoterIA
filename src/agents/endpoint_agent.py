@@ -31,17 +31,15 @@ You are the Endpoint Analysis Agent in the SoterIA SOC.
 
 YOUR MANDATE — analyse the security log below and evaluate ONLY:
   1. Event 4688 (Process Creation) — look for PowerShell, cmd.exe,
-     or wscript executing with suspicious command-line arguments
-     (downloading files, encoded commands, bypass flags).
-  2. Event 7045 (Service Installation) — look for services installed
-     with auto-start from unusual paths (Temp, AppData, user-writable
-     directories) or with names mimicking legitimate Windows services.
-  3. File-name and path indicators — executables in C:\\Temp,
-     C:\\Windows\\Temp, or user profile folders are suspicious.
+     or wscript executing with suspicious command-line arguments.
+  2. Event 7045 (Service Installation) — look for unusual paths.
+  3. File-name and path indicators — executables in C:\\Temp.
+  4. YARA Matches (Malware Detection) — explicitly look for "YARA",
+     "malware", or file integrity anomalies. If found, this is a CRITICAL threat.
 
-For Event IDs that are NOT 4688 or 7045 (e.g. 4624, 4625), your
-risk_score should be low (1.0-2.0) because those events are outside
-your domain.
+For Event IDs that are NOT related to process creation, services, or malware
+(e.g. 4624, 4625), your risk_score should be low (1.0-2.0) because those events
+are outside your domain.
 
 IGNORE user account privilege analysis and source IP reputation.
 Other agents handle those.
@@ -105,5 +103,5 @@ async def analyse(log_entry: dict) -> AgentVerdict:
             risk_score=1.0,
             confidence=0.0,
             mitre_tactic="None",
-            rationale=f"Schema validation failed — defaulting to low risk. {exc}",
+            rationale=f"Schema validation failed — defaulting to low risk. {str(exc)[:100]}",
         )

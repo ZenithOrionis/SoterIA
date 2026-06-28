@@ -1,22 +1,25 @@
 # SoterIA: Autonomous Threat Tribunal
 
-![SoterIA Header](https://img.shields.io/badge/Status-Active-00ff88?style=for-the-badge)
+![SoterIA Header](https://img.shields.io/badge/Status-Active-3b82f6?style=for-the-badge)
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge)
 ![Ollama](https://img.shields.io/badge/Powered_by-Ollama-white?style=for-the-badge)
 
 <br>
 
 <div align="center">
-  <img src="assets/dashboard_live.png" alt="SoterIA Live Arena Dashboard" width="100%">
-  <p><em><b>Live Arena:</b> Real-time threat telemetry, global attack origin mapping, and Copilot AI sidebar.</em></p>
-  <br>
+  <img src="assets/dashboard_1.png" alt="SoterIA Overview Dashboard" width="100%">
+  <br><br>
 
-  <img src="assets/dashboard_microscope.png" alt="Swarm Microscope and Lateral Movement Graph" width="100%">
-  <p><em><b>Swarm Microscope:</b> Attack topology mapping of lateral movement with consensus-based AI agent scoring.</em></p>
-  <br>
+  <img src="assets/dashboard_2.png" alt="SoterIA Threat Score Timeline" width="100%">
+  <br><br>
 
-  <img src="assets/dashboard_historical.png" alt="Historical Analytics Dashboard" width="100%">
-  <p><em><b>Historical Analytics:</b> Dynamic timeline buckets plotting autonomous threat triage and critical incident distribution over time.</em></p>
+  <img src="assets/dashboard_3.png" alt="SoterIA Protection Modules" width="100%">
+  <br><br>
+
+  <img src="assets/dashboard_4.png" alt="SoterIA Deep Investigation" width="100%">
+  <br><br>
+
+  <img src="assets/dashboard_5.png" alt="SoterIA Swarm Triage" width="100%">
 </div>
 
 <br>
@@ -25,12 +28,27 @@ SoterIA is an elite, autonomous Security Operations Center (SOC) platform design
 
 Featuring an advanced **Threat Tribunal** and an integrated **CISO Copilot**, SoterIA allows you to query your live database with natural language to investigate active threats, lateral movement, and critical infrastructure attacks.
 
+## Working Principle and Flow
+
+SoterIA operates on a continuous pipeline of telemetry ingestion, autonomous AI analysis, and proactive response:
+
+1. **Telemetry Ingestion:** Endpoint agents (like Wazuh) and system logs stream raw security events into a high-speed local database.
+2. **Autonomous Swarm Analysis (The Tribunal):** Every new event triggers the Threat Tribunal. A swarm of specialized AI agents asynchronously evaluate the event:
+    - **Identity Agent:** Analyzes user context and potential privilege escalation.
+    - **Network Agent:** Evaluates IP reputation, connection ports, and lateral movement.
+    - **Endpoint Agent:** Scans process trees, command lines, and local anomalies.
+    - **Intel Agent:** Cross-references IoCs (IPs, hashes) against local CTI feeds (e.g., MISP).
+    - **Vulnerability Agent:** Maps affected endpoint software to known zero-days and CVEs.
+3. **Consensus Scoring:** The Tribunal aggregates the confidence and risk scores from all 5 agents to generate a single, definitive consensus threat score.
+4. **Active Response:** If the consensus score crosses the critical threshold, SoterIA autonomously dispatches targeted active responses (e.g., `kill-process` or network isolation) to neutralize the threat instantly.
+5. **CISO Copilot:** Human analysts can interact directly with the database via a natural-language AI Copilot to investigate specific IPs, hunt for anomalies, and query historical logs.
+
 ## Core Features
-*   **Agentic Swarm Triage:** Autonomous AI agents (Identity, Network, Endpoint) analyze raw logs and vote on severity using a consensus-based Threat Tribunal.
+*   **Agentic Swarm Triage:** Autonomous AI agents analyze raw logs and vote on severity using a consensus-based Threat Tribunal.
 *   **Fully Air-Gapped:** 100% local LLM execution via Ollama (`llama3.2`). No API keys, no data exfiltration.
-*   **CISO Copilot:** An interactive, contextual AI assistant that answers questions directly based on the live security event SQLite database.
-*   **CrowdStrike-Inspired UI:** Sleek, high-performance Streamlit dashboard featuring live telemetry, event queues, and lateral movement topology graphs.
-*   **Mock Attack Generator:** Built-in threat simulator (`mock_generator.py`) to inject Brute Force, Malicious Services, and Suspicious PowerShell events for testing.
+*   **CISO Copilot:** An interactive, contextual AI assistant that answers questions directly based on the live security event database.
+*   **Enterprise UI:** Sleek, high-performance Streamlit dashboard featuring live telemetry, event queues, and lateral movement topology graphs.
+*   **Protection Modules:** Built-in cloned capabilities of tier-1 tools, including Continuous Threat Intelligence (CTI), Next-Gen AV, and Vulnerability Management.
 
 ## Installation
 

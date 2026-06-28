@@ -19,6 +19,7 @@ import logging
 
 from src.agents.schemas import AgentVerdict, AGENT_VERDICT_SCHEMA
 from src.services.llm_gateway import query_swarm_llm
+from src.db.neo4j_client import neo4j_client
 
 logger = logging.getLogger("soteria.agent.identity")
 
@@ -65,11 +66,25 @@ async def analyse(log_entry: dict) -> AgentVerdict:
         default is returned so the Tribunal can still aggregate.
     """
 
+    user_account = log_entry['user_account']
+    blast_radius_context = ""
+    
+    if user_account and user_account != "Unknown":
+        br = neo4j_client.check_blast_radius(user_account)
+        if br:
+            blast_radius_context = (
+                f"\n\n[CRITICAL BLAST RADIUS WARNING]\n"
+                f"Neo4j Graph Analysis confirms user '{user_account}' has a path to "
+                f"Domain Admins via '{br['target']}' in {br['hops']} hops!\n"
+                f"This identity is a high-value vector. Elevate risk score heavily if compromised."
+            )
+
     user_payload = (
         f"EVENT_ID: {log_entry['event_id']}\n"
-        f"USER_ACCOUNT: {log_entry['user_account']}\n"
+        f"USER_ACCOUNT: {user_account}\n"
         f"TIMESTAMP: {log_entry['timestamp']}\n"
         f"RAW_LOG:\n{log_entry['raw_log']}"
+        f"{blast_radius_context}"
     )
 
     result = await query_swarm_llm(
@@ -101,5 +116,5 @@ async def analyse(log_entry: dict) -> AgentVerdict:
             risk_score=1.0,
             confidence=0.0,
             mitre_tactic="None",
-            rationale=f"Schema validation failed — defaulting to low risk. {exc}",
+            rationale=f"Schema validation failed — defaulting to low risk. {str(exc)[:100]}",
         )
